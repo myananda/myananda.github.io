@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Calculá Fácil y Ganá Más — MyAnanda</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     :root{
       --bg:#0b0b0c; --card:#151518; --ink:#e9e9ee; --muted:#a5a7b4; --accent:#8b5cf6; --ok:#22c55e; --warn:#f59e0b; --err:#ef4444;
@@ -154,7 +155,6 @@
     const fmt = (n)=> isFinite(n) ? n.toLocaleString('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:2}) : '—';
     const pct = (n)=> isFinite(n) ? (Math.round(n*1000)/10).toLocaleString('es-AR')+" %" : '—';
 
-    // Mostrar u ocultar campo manual según selección
     $('#margenDeseado').addEventListener('change', ()=>{
       if($('#margenDeseado').value === 'otro'){
         $('#margenManual').style.display = 'block';
@@ -187,11 +187,9 @@
       }
       $('#alerta').textContent = '';
 
-      // Precio de venta basado en margen sobre costo
       const ventaBruta = costo * (1 + margenDeseado/100);
       const venta = ventaBruta * (1 - desc/100);
       const ganancia = venta - costo;
-      // Margen mostrado = Ganancia / Costo × 100
       const margen = (costo > 0) ? (ganancia / costo) * 100 : NaN;
 
       ultimoCalculo = {venta, ganancia, margen, desc, ventaBruta, costo};
@@ -264,27 +262,21 @@
 
     function descargarExcel(){
       const table = document.getElementById('tablaProductos');
-      let data = [];
+      const wb = XLSX.utils.book_new();
+      const ws_data = [];
       for (let i=0; i<table.rows.length; i++){
         let row = [];
         for (let j=0; j<table.rows[i].cells.length-1; j++){ // excluye la columna acciones
           row.push(table.rows[i].cells[j].innerText);
         }
-        data.push(row.join(";"));
+        ws_data.push(row);
       }
-      const csvContent = data.join("\n");
-      const blob = new Blob([csvContent], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const ws = XLSX.utils.aoa_to_sheet(ws_data);
+      XLSX.utils.book_append_sheet(wb, ws, "Productos");
       const fecha = new Date().toISOString().slice(0,10);
-      a.href = url;
-      a.download = `productos_${fecha}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      XLSX.writeFile(wb, `productos_${fecha}.xlsx`);
     }
 
-    // Eventos
     $('#calcular').addEventListener('click', calcular);
     $('#limpiar').addEventListener('click', limpiar);
     $('#agregar').addEventListener('click', agregarProducto);
