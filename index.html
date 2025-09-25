@@ -21,9 +21,8 @@
     .grid{display:grid;gap:12px}
     .inputs{grid-template-columns:1fr;}
     label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:6px}
-    input[type="number"], input[type="text"]{width:100%;padding:14px 12px;border-radius:12px;border:1px solid #2b2b33;background:#0f0f12;color:var(--ink);outline:none}
-    input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(139,92,246,.25)}
-    .row{display:grid;gap:12px}
+    input, select{width:100%;padding:14px 12px;border-radius:12px;border:1px solid #2b2b33;background:#0f0f12;color:var(--ink);outline:none}
+    input:focus, select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(139,92,246,.25)}
     .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
     button{appearance:none;border:0;border-radius:12px;padding:12px 14px;background:var(--accent);color:white;font-weight:600;cursor:pointer}
     button.ghost{background:#1e1e24;color:var(--ink);border:1px solid #2b2b33}
@@ -36,8 +35,13 @@
     .objective p{margin:.4rem 0}
     footer{color:var(--muted);padding:24px 18px;text-align:center}
 
+    table{width:100%;border-collapse:collapse;margin-top:20px}
+    th,td{border:1px solid #2b2b33;padding:8px;text-align:left}
+    th{background:#1e1e24;color:var(--ink)}
+    .delete-btn{background:#ef4444;color:white;border:none;border-radius:6px;padding:4px 8px;cursor:pointer}
+
     @media (min-width:720px){
-      .inputs{grid-template-columns:repeat(3,1fr)}
+      .inputs{grid-template-columns:repeat(4,1fr)}
       .result{grid-template-columns:repeat(3,1fr)}
     }
   </style>
@@ -57,29 +61,47 @@
     <section class="container">
       <article class="card objective">
         <h2 style="margin-top:0">Objetivo</h2>
-        <p>Esta página te ayuda a calcular en segundos tu <strong>Ganancia</strong> (<em>Precio de Venta − Costo</em>) y tu <strong>Margen</strong> (%). Solo completá el costo al que comprás el producto y el precio al que lo vendés. Ideal para decidir precios, ver promos y planificar tus objetivos.</p>
+        <p>Esta página te ayuda a calcular en segundos tu <strong>Precio de venta</strong> a partir del <strong>Costo</strong>, el <strong>Porcentaje de ganancia</strong> que querés lograr y, opcionalmente, un <strong>Descuento</strong> para tu cliente.</p>
       </article>
 
       <article class="card">
         <h2 style="margin-top:0">Ingresá los valores</h2>
         <div class="grid inputs">
           <div>
-            <label for="costo">Costo (lo que pagás a MyAnanda)</label>
-            <input id="costo" type="number" inputmode="decimal" placeholder="Ej: 500" min="0" step="0.01">
+            <label for="nombre">Nombre del producto (opcional)</label>
+            <input id="nombre" type="text" placeholder="Ej: Sahumerio Lavanda">
           </div>
           <div>
-            <label for="venta">Precio de venta (lo que paga tu cliente)</label>
-            <input id="venta" type="number" inputmode="decimal" placeholder="Ej: 800" min="0" step="0.01">
+            <label for="costo">Costo (lo que pagás a MyAnanda)</label>
+            <input id="costo" type="number" inputmode="numeric" placeholder="Ej: 500" min="0" step="1">
+          </div>
+          <div>
+            <label for="margenDeseado">% de ganancia que querés ganar</label>
+            <select id="margenDeseado">
+              <option value="">Seleccionar</option>
+              <option value="10">10%</option>
+              <option value="20">20%</option>
+              <option value="30">30%</option>
+              <option value="40">40%</option>
+              <option value="50">50%</option>
+              <option value="60">60%</option>
+              <option value="70">70%</option>
+              <option value="80">80%</option>
+              <option value="90">90%</option>
+              <option value="100">100%</option>
+              <option value="otro">Otro...</option>
+            </select>
+            <input id="margenManual" type="number" inputmode="numeric" placeholder="Ingresar %" min="0" step="1" style="margin-top:8px; display:none;">
           </div>
           <div>
             <label for="descuento">Descuento opcional al cliente (%)</label>
-            <input id="descuento" type="number" inputmode="decimal" placeholder="Ej: 10" min="0" max="100" step="0.1">
+            <input id="descuento" type="number" inputmode="numeric" placeholder="Ej: 10" min="0" max="100" step="1">
           </div>
         </div>
         <div class="btns">
           <button id="calcular">Calcular</button>
           <button class="ghost" id="limpiar">Limpiar</button>
-          <button class="ghost" id="copiar">Copiar resultados</button>
+          <button class="ghost" id="agregar">Agregar producto</button>
         </div>
       </article>
 
@@ -99,10 +121,26 @@
           <div class="stat">
             <div class="k">Margen de ganancia</div>
             <div class="v" id="margen">—</div>
-            <div class="small">Fórmula: (Ganancia / Venta) × 100</div>
+            <div class="small">Fórmula: (Ganancia / Costo) × 100</div>
           </div>
         </div>
         <p class="small" id="alerta" style="margin-top:12px"></p>
+
+        <h3>Productos agregados</h3>
+        <table id="tablaProductos">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Costo</th>
+              <th>Ganancia ($)</th>
+              <th>Margen (%)</th>
+              <th>Precio Final</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <button class="ghost" id="descargar">Descargar en Excel</button>
       </article>
     </section>
   </main>
@@ -116,28 +154,48 @@
     const fmt = (n)=> isFinite(n) ? n.toLocaleString('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:2}) : '—';
     const pct = (n)=> isFinite(n) ? (Math.round(n*1000)/10).toLocaleString('es-AR')+" %" : '—';
 
+    // Mostrar u ocultar campo manual según selección
+    $('#margenDeseado').addEventListener('change', ()=>{
+      if($('#margenDeseado').value === 'otro'){
+        $('#margenManual').style.display = 'block';
+      } else {
+        $('#margenManual').style.display = 'none';
+        $('#margenManual').value = '';
+      }
+    });
+
+    let ultimoCalculo = null;
+
     function calcular(){
-      const costo = parseFloat($('#costo').value.replace(',', '.'));
-      const ventaBruta = parseFloat($('#venta').value.replace(',', '.'));
-      const d = parseFloat($('#descuento').value.replace(',', '.'));
+      const costo = parseInt($('#costo').value);
+      let margenDeseado = null;
+      if($('#margenDeseado').value === 'otro'){
+        margenDeseado = parseInt($('#margenManual').value);
+      } else {
+        margenDeseado = parseInt($('#margenDeseado').value);
+      }
+      const d = parseInt($('#descuento').value);
 
       const costoOk = !isNaN(costo) && costo >= 0;
-      const ventaOk = !isNaN(ventaBruta) && ventaBruta >= 0;
+      const margenOk = !isNaN(margenDeseado) && margenDeseado >= 0;
       const desc = (!isNaN(d) && d > 0) ? Math.min(d,100) : 0;
 
-      if(!costoOk || !ventaOk){
-        $('#alerta').textContent = 'Ingresá números válidos en Costo y Precio de venta.';
+      if(!costoOk || !margenOk){
+        $('#alerta').textContent = 'Ingresá números válidos en Costo y % de ganancia.';
         $('#alerta').style.color = 'var(--err)';
-        render(null);
         return; 
       }
       $('#alerta').textContent = '';
 
+      // Precio de venta basado en margen sobre costo
+      const ventaBruta = costo * (1 + margenDeseado/100);
       const venta = ventaBruta * (1 - desc/100);
       const ganancia = venta - costo;
-      const margen = (venta > 0) ? (ganancia / venta) * 100 : NaN;
+      // Margen mostrado = Ganancia / Costo × 100
+      const margen = (costo > 0) ? (ganancia / costo) * 100 : NaN;
 
-      render({venta, ganancia, margen, desc, ventaBruta});
+      ultimoCalculo = {venta, ganancia, margen, desc, ventaBruta, costo};
+      render(ultimoCalculo);
     }
 
     function render(state){
@@ -168,34 +226,69 @@
     }
 
     function limpiar(){
+      $('#nombre').value='';
       $('#costo').value='';
-      $('#venta').value='';
+      $('#margenDeseado').value='';
+      $('#margenManual').value='';
+      $('#margenManual').style.display='none';
       $('#descuento').value='';
+      ultimoCalculo = null;
       render(null);
       $('#alerta').textContent='';
     }
 
-    async function copiar(){
-      const precio = $('#precioFinal').textContent;
-      const gan = $('#ganancia').textContent;
-      const mar = $('#margen').textContent;
-      const text = `Precio final: ${precio}\nGanancia: ${gan}\nMargen: ${mar}`;
-      try{
-        await navigator.clipboard.writeText(text);
-        const a = $('#alerta'); a.textContent = 'Resultados copiados al portapapeles.'; a.style.color='var(--ok)';
-      }catch(e){
-        const a = $('#alerta'); a.textContent = 'No se pudo copiar (permiso del navegador).'; a.style.color='var(--warn)';
+    function agregarProducto(){
+      if(!ultimoCalculo){
+        $('#alerta').textContent = 'Primero calculá un producto válido antes de agregar.';
+        $('#alerta').style.color = 'var(--err)';
+        return;
       }
+      const nombre = $('#nombre').value || '(Sin nombre)';
+      const {venta, ganancia, margen, costo} = ultimoCalculo;
+      const tbody = document.querySelector('#tablaProductos tbody');
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${nombre}</td>
+        <td>${fmt(costo)}</td>
+        <td>${fmt(ganancia)}</td>
+        <td>${pct(margen/100)}</td>
+        <td>${fmt(venta)}</td>
+        <td><button class="delete-btn">X</button></td>
+      `;
+      row.querySelector('.delete-btn').addEventListener('click', ()=>{
+        row.remove();
+      });
+      tbody.appendChild(row);
+      limpiar();
+    }
+
+    function descargarExcel(){
+      const table = document.getElementById('tablaProductos');
+      let data = [];
+      for (let i=0; i<table.rows.length; i++){
+        let row = [];
+        for (let j=0; j<table.rows[i].cells.length-1; j++){ // excluye la columna acciones
+          row.push(table.rows[i].cells[j].innerText);
+        }
+        data.push(row.join(";"));
+      }
+      const csvContent = data.join("\n");
+      const blob = new Blob([csvContent], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const fecha = new Date().toISOString().slice(0,10);
+      a.href = url;
+      a.download = `productos_${fecha}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
 
     // Eventos
     $('#calcular').addEventListener('click', calcular);
     $('#limpiar').addEventListener('click', limpiar);
-    $('#copiar').addEventListener('click', copiar);
-    ['#costo','#venta','#descuento'].forEach(sel=>{
-      document.querySelector(sel).addEventListener('keyup', (e)=>{ if(e.key==='Enter') calcular(); });
-      document.querySelector(sel).addEventListener('change', calcular);
-    });
+    $('#agregar').addEventListener('click', agregarProducto);
+    $('#descargar').addEventListener('click', descargarExcel);
   </script>
 </body>
 </html>
