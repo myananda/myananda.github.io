@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculá Fácil y Ganá Más — MyAnanda</title>
+  <style>
+    :root{
+      --bg:#0b0b0c; --card:#151518; --ink:#e9e9ee; --muted:#a5a7b4; --accent:#8b5cf6; --ok:#22c55e; --warn:#f59e0b; --err:#ef4444;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif}
+    header{position:sticky;top:0;background:rgba(11,11,12,.7);backdrop-filter:saturate(180%) blur(10px);border-bottom:1px solid #23232a}
+    .wrap{max-width:980px;margin:0 auto;padding:20px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#22d3ee);display:inline-block}
+    h1{font-size:1.1rem;margin:.25rem 0 0;font-weight:700}
+    main{padding:28px 18px}
+    .container{max-width:980px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:18px}
+    .card{background:var(--card);border:1px solid #23232a;border-radius:18px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .grid{display:grid;gap:12px}
+    .inputs{grid-template-columns:1fr;}
+    label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:6px}
+    input[type="number"], input[type="text"]{width:100%;padding:14px 12px;border-radius:12px;border:1px solid #2b2b33;background:#0f0f12;color:var(--ink);outline:none}
+    input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(139,92,246,.25)}
+    .row{display:grid;gap:12px}
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+    button{appearance:none;border:0;border-radius:12px;padding:12px 14px;background:var(--accent);color:white;font-weight:600;cursor:pointer}
+    button.ghost{background:#1e1e24;color:var(--ink);border:1px solid #2b2b33}
+    .result{display:grid;grid-template-columns:1fr;gap:12px}
+    .stat{background:#0f0f12;border:1px dashed #2b2b33;border-radius:14px;padding:14px}
+    .k{font-size:.9rem;color:var(--muted)}
+    .v{font-size:1.4rem;font-weight:800;margin-top:4px}
+    .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}
+    .small{font-size:.85rem;color:var(--muted)}
+    .objective p{margin:.4rem 0}
+    footer{color:var(--muted);padding:24px 18px;text-align:center}
+
+    @media (min-width:720px){
+      .inputs{grid-template-columns:repeat(3,1fr)}
+      .result{grid-template-columns:repeat(3,1fr)}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap brand">
+      <span class="logo" aria-hidden="true"></span>
+      <div>
+        <h1>Calculá Fácil y Ganá Más — MyAnanda</h1>
+        <div class="small">Calculadora de <strong>ganancia</strong> y <strong>margen</strong> para tus ventas</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="container">
+      <article class="card objective">
+        <h2 style="margin-top:0">Objetivo</h2>
+        <p>Esta página te ayuda a calcular en segundos tu <strong>Ganancia</strong> (<em>Precio de Venta − Costo</em>) y tu <strong>Margen</strong> (%). Solo completá el costo al que comprás el producto y el precio al que lo vendés. Ideal para decidir precios, ver promos y planificar tus objetivos.</p>
+      </article>
+
+      <article class="card">
+        <h2 style="margin-top:0">Ingresá los valores</h2>
+        <div class="grid inputs">
+          <div>
+            <label for="costo">Costo (lo que pagás a MyAnanda)</label>
+            <input id="costo" type="number" inputmode="decimal" placeholder="Ej: 500" min="0" step="0.01">
+          </div>
+          <div>
+            <label for="venta">Precio de venta (lo que paga tu cliente)</label>
+            <input id="venta" type="number" inputmode="decimal" placeholder="Ej: 800" min="0" step="0.01">
+          </div>
+          <div>
+            <label for="descuento">Descuento opcional al cliente (%)</label>
+            <input id="descuento" type="number" inputmode="decimal" placeholder="Ej: 10" min="0" max="100" step="0.1">
+          </div>
+        </div>
+        <div class="btns">
+          <button id="calcular">Calcular</button>
+          <button class="ghost" id="limpiar">Limpiar</button>
+          <button class="ghost" id="copiar">Copiar resultados</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2 style="margin-top:0">Resultados</h2>
+        <div class="result">
+          <div class="stat">
+            <div class="k">Precio final al cliente</div>
+            <div class="v" id="precioFinal">—</div>
+            <div class="small" id="notaDescuento"></div>
+          </div>
+          <div class="stat">
+            <div class="k">Ganancia</div>
+            <div class="v" id="ganancia">—</div>
+            <div class="small">Fórmula: Venta − Costo</div>
+          </div>
+          <div class="stat">
+            <div class="k">Margen de ganancia</div>
+            <div class="v" id="margen">—</div>
+            <div class="small">Fórmula: (Ganancia / Venta) × 100</div>
+          </div>
+        </div>
+        <p class="small" id="alerta" style="margin-top:12px"></p>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    © MyAnanda · Herramienta simple para emprendedores
+  </footer>
+
+  <script>
+    const $ = (s)=>document.querySelector(s);
+    const fmt = (n)=> isFinite(n) ? n.toLocaleString('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:2}) : '—';
+    const pct = (n)=> isFinite(n) ? (Math.round(n*1000)/10).toLocaleString('es-AR')+" %" : '—';
+
+    function calcular(){
+      const costo = parseFloat($('#costo').value.replace(',', '.'));
+      const ventaBruta = parseFloat($('#venta').value.replace(',', '.'));
+      const d = parseFloat($('#descuento').value.replace(',', '.'));
+
+      const costoOk = !isNaN(costo) && costo >= 0;
+      const ventaOk = !isNaN(ventaBruta) && ventaBruta >= 0;
+      const desc = (!isNaN(d) && d > 0) ? Math.min(d,100) : 0;
+
+      if(!costoOk || !ventaOk){
+        $('#alerta').textContent = 'Ingresá números válidos en Costo y Precio de venta.';
+        $('#alerta').style.color = 'var(--err)';
+        render(null);
+        return; 
+      }
+      $('#alerta').textContent = '';
+
+      const venta = ventaBruta * (1 - desc/100);
+      const ganancia = venta - costo;
+      const margen = (venta > 0) ? (ganancia / venta) * 100 : NaN;
+
+      render({venta, ganancia, margen, desc, ventaBruta});
+    }
+
+    function render(state){
+      if(!state){
+        $('#precioFinal').textContent = '—';
+        $('#ganancia').textContent = '—';
+        $('#margen').textContent = '—';
+        $('#notaDescuento').textContent = '';
+        return;
+      }
+      const {venta, ganancia, margen, desc, ventaBruta} = state;
+      $('#precioFinal').textContent = fmt(venta);
+      $('#ganancia').textContent = fmt(ganancia);
+      $('#margen').textContent = pct(margen/100);
+      $('#notaDescuento').textContent = desc>0 ? `Incluye ${desc.toLocaleString('es-AR')}% de descuento (base: ${fmt(ventaBruta)})` : '';
+
+      const alerta = $('#alerta');
+      if(ganancia < 0){
+        alerta.textContent = 'Atención: estás vendiendo por debajo del costo.';
+        alerta.style.color = 'var(--err)';
+      } else if (ganancia === 0){
+        alerta.textContent = 'Estás en punto de equilibrio (sin ganar ni perder).';
+        alerta.style.color = 'var(--warn)';
+      } else {
+        alerta.textContent = '¡Venta rentable!';
+        alerta.style.color = 'var(--ok)';
+      }
+    }
+
+    function limpiar(){
+      $('#costo').value='';
+      $('#venta').value='';
+      $('#descuento').value='';
+      render(null);
+      $('#alerta').textContent='';
+    }
+
+    async function copiar(){
+      const precio = $('#precioFinal').textContent;
+      const gan = $('#ganancia').textContent;
+      const mar = $('#margen').textContent;
+      const text = `Precio final: ${precio}\nGanancia: ${gan}\nMargen: ${mar}`;
+      try{
+        await navigator.clipboard.writeText(text);
+        const a = $('#alerta'); a.textContent = 'Resultados copiados al portapapeles.'; a.style.color='var(--ok)';
+      }catch(e){
+        const a = $('#alerta'); a.textContent = 'No se pudo copiar (permiso del navegador).'; a.style.color='var(--warn)';
+      }
+    }
+
+    // Eventos
+    $('#calcular').addEventListener('click', calcular);
+    $('#limpiar').addEventListener('click', limpiar);
+    $('#copiar').addEventListener('click', copiar);
+    ['#costo','#venta','#descuento'].forEach(sel=>{
+      document.querySelector(sel).addEventListener('keyup', (e)=>{ if(e.key==='Enter') calcular(); });
+      document.querySelector(sel).addEventListener('change', calcular);
+    });
+  </script>
+</body>
+</html>
